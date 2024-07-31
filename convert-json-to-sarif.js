@@ -47,6 +47,13 @@ function convertJsonToSarif(jsonData) {
 const inputPath = process.argv[2];
 const outputPath = process.argv[3]; // Ensure this is declared only once
 
+console.log(`Input Path: ${inputPath}`);
+console.log(`Output Path: ${outputPath}`);
+
+const jsonData = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+const sarifData = convertJsonToSarif(jsonData);
+fs.writeFileSync(outputPath, sarifData);
+
 fs.readFile(inputPath, 'utf8', (err, data) => {
     if (err) {
         console.error('Error reading file:', err);
