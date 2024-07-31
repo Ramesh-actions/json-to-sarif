@@ -50,6 +50,10 @@ const outputPath = process.argv[3]; // Ensure this is declared only once
 console.log(`Input Path: ${inputPath}`);
 console.log(`Output Path: ${outputPath}`);
 
+if (!inputPath || !outputPath) {
+  throw new Error("Input path and output path must be provided");
+}
+
 const jsonData = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
 const sarifData = convertJsonToSarif(jsonData);
 fs.writeFileSync(outputPath, sarifData);
