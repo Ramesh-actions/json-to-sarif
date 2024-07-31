@@ -36,7 +36,7 @@ jobs:
         node-version: '14'
 
     - name: Convert JSON to SARIF
-      uses: your-username/your-repo-name@v1
+      uses: Ramesh-actions/json-to-sarif@main
       with:
         input_path: 'data/input.json'
         output_path: 'data/output.sarif'
