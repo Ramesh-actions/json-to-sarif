@@ -1,12 +1,89 @@
-const fs = require('fs'); // Import the fs module
+const fs = require('fs');
 
+// Get the JSON file path from command-line arguments
+const inputPath = process.argv[2];
+const outputPath = process.argv[3];
+
+if (!inputPath) {
+    console.error('C:\\Users\\rameshk\\Desktop\\test-report\\horusec-report.json.');
+    process.exit(1);
+}
+
+// Load the JSON data
+const jsonData = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+const horusecReport = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
+
+// Create the SARIF structure
+const sarifReport = {
+    version: "2.1.0",
+    runs: [
+        {
+            tool: {
+                driver: {
+                    name: "Horusec",
+                    version: horusecReport.version,
+                    informationUri: "https://horusec.io",
+                    rules: []
+                }
+            },
+            results: []
+        }
+    ]
+};
+
+// Map each vulnerability to the SARIF format
+horusecReport.analysisVulnerabilities.forEach((analysis) => {
+    const vulnerability = analysis.vulnerabilities;
+    const result = {
+        ruleId: vulnerability.rule_id,
+        message: {
+            text: vulnerability.details
+        },
+        locations: [
+            {
+                physicalLocation: {
+                    artifactLocation: {
+                        uri: vulnerability.file
+                    },
+                    region: {
+                        startLine: parseInt(vulnerability.line),
+                        startColumn: parseInt(vulnerability.column)
+                    }
+                }
+            }
+        ],
+        properties: {
+            vulnerabilityID: analysis.vulnerabilityID,
+            analysisID: analysis.analysisID,
+            createdAt: analysis.createdAt,
+            confidence: vulnerability.confidence,
+            code: vulnerability.code,
+            securityTool: vulnerability.securityTool,
+            language: vulnerability.language,
+            severity: vulnerability.severity,
+            type: vulnerability.type,
+            commitAuthor: vulnerability.commitAuthor,
+            commitEmail: vulnerability.commitEmail,
+            commitHash: vulnerability.commitHash,
+            commitMessage: vulnerability.commitMessage,
+            commitDate: vulnerability.commitDate,
+            vulnHash: vulnerability.vulnHash,
+            deprecatedHashes: vulnerability.deprecatedHashes,
+            securityToolVersion: vulnerability.securityToolVersion,
+            securityToolInfoUri: vulnerability.securityToolInfoUri
+        }
+    };
+    sarifReport.runs[0].results.push(result);
+});
+
+// Write the SARIF report to a file
+const sarifFilePath = outputPath || inputPath.replace('.json', '.sarif');
+fs.writeFileSync(sarifFilePath, JSON.stringify(sarifReport, null, 2), 'utf8');
+
+console.log(`SARIF report generated at ${sarifFilePath}`);
+
+// Custom JSON to SARIF conversion function
 function convertJsonToSarif(jsonData) {
-    console.log('Parsed JSON data:', JSON.stringify(jsonData, null, 2)); // Log the parsed JSON data
-
-    if (!Array.isArray(jsonData)) {
-        throw new TypeError('Expected an array of JSON data');
-    }
-
     const sarif = {
         version: "2.1.0",
         runs: [
@@ -40,43 +117,8 @@ function convertJsonToSarif(jsonData) {
             }
         ]
     };
-
-    return sarif;
+    return JSON.stringify(sarif, null, 2);
 }
 
-const inputPath = process.argv[2];
-const outputPath = process.argv[3]; // Ensure this is declared only once
-
-console.log(`Input Path: ${inputPath}`);
-console.log(`Output Path: ${outputPath}`);
-
-if (!inputPath || !outputPath) {
-  throw new Error("Input path and output path must be provided");
-}
-
-const jsonData = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
 const sarifData = convertJsonToSarif(jsonData);
 fs.writeFileSync(outputPath, sarifData);
-
-fs.readFile(inputPath, 'utf8', (err, data) => {
-    if (err) {
-        console.error('Error reading file:', err);
-        return;
-    }
-    try {
-        const jsonData = JSON.parse(data);
-        console.log('Raw JSON data:', jsonData); // Log the raw JSON data
-        const sarifData = convertJsonToSarif(jsonData);
-        console.log('Converted SARIF data:', JSON.stringify(sarifData, null, 2));
-
-        fs.writeFile(outputPath, JSON.stringify(sarifData, null, 2), (writeErr) => {
-            if (writeErr) {
-                console.error('Error writing SARIF file:', writeErr);
-            } else {
-                console.log('SARIF file written successfully to', outputPath);
-            }
-        });
-    } catch (parseError) {
-        console.error('Error parsing JSON:', parseError);
-    }
-});
