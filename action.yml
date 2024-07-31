@@ -1,0 +1,15 @@
+name: 'Convert JSON to SARIF'
+description: 'A custom action to convert JSON files to SARIF format'
+inputs:
+  input_path:
+    description: 'Path to the input JSON file'
+    required: true
+  output_path:
+    description: 'Path to save the output SARIF file'
+    required: true
+runs:
+  using: 'node12'
+  main: 'convert-json-to-sarif.js'
+branding:
+  icon: 'code'
+  color: 'blue'
